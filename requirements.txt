@@ -1,0 +1,5 @@
+# 项目依赖文件
+# Rvmat-Creator 项目使用以下依赖
+
+tkinter
+tkinterdnd2
