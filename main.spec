@@ -3,14 +3,13 @@
 block_cipher = None
 
 
-a = Analysis(['src/main.py'],
+a = Analysis(['src\\main.py'],
              pathex=['D:\\Python Project\\Rvmat-Creator'],
-             binaries=[],
+             binaries=[('C:\\Users\\fengzhi\\AppData\\Roaming\\Python\\Python313\\site-packages\\tkinterdnd2\\tkdnd\\win-x64\\libtkdnd2.9.4.dll', 'tkinterdnd2/tkdnd/win-x64')],
              datas=[('C:\\Users\\fengzhi\\AppData\\Roaming\\Python\\Python313\\site-packages\\tkinterdnd2\\tkdnd\\win-x64', 'tkinterdnd2/tkdnd/win-x64'),
-                    ('C:\\Users\\fengzhi\\AppData\\Roaming\\Python\\Python313\\site-packages\\tkinterdnd2\\tkdnd\\win-x86', 'tkinterdnd2/tkdnd/win-x86'),
-                    ('C:\\Users\\fengzhi\\AppData\\Roaming\\Python\\Python313\\site-packages\\tkinterdnd2\\tkdnd\\win-arm64', 'tkinterdnd2/tkdnd/win-arm64')],
-             hiddenimports=['tkinterdnd2'],
-             hookspath=[],
+                    ('C:\\Users\\fengzhi\\AppData\\Roaming\\Python\\Python313\\site-packages\\tkinterdnd2', 'tkinterdnd2')],
+             hiddenimports=['tkinterdnd2', 'tkinterdnd2.TkinterDnD'],
+             hookspath=['.'],
              runtime_hooks=[],
              excludes=[],
              win_no_prefer_redirects=False,

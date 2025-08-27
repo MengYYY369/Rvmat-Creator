@@ -31,7 +31,7 @@ class MainAppUI(BaseUI, DragDropMixin):
         self.original_bg = None
         
         # 语言设置（默认中文）
-        self.language = "zh"  # "zh" for Chinese, "en" for English
+        self.language = "en"  # "zh" for Chinese, "en" for English
         self.translations = {
             "zh": {
                 "title": "Rvmat-Creator - DayZ 材质文件处理器",
@@ -42,7 +42,7 @@ class MainAppUI(BaseUI, DragDropMixin):
                 "process_batch": "批量处理",
                 "log_window": "处理日志",
                 "click_hint": "💡 点击此区域选择文件 (如果拖拽功能失效)",
-                "empty_list": "点击选择 .rvmat 文件",
+                "empty_list": "拖拽 .rvmat 文件 到这",
                 "confirm_process": "确认",
                 "confirm_message": f"确定要处理 {len(self.selected_files) if hasattr(self, 'selected_files') else 0} 个文件吗?",
                 "warning": "警告",
@@ -60,9 +60,9 @@ class MainAppUI(BaseUI, DragDropMixin):
                 "select_files": "Select Files",
                 "select_directory": "Select Directory",
                 "process_batch": "Batch Process",
-                "log_window": "Processing Log",
+                "log_window": "Logs",
                 "click_hint": "💡 Click this area to select files (if drag and drop fails)",
-                "empty_list": "Click to select .rvmat files",
+                "empty_list": "Drag the .rvmat file here.",
                 "confirm_process": "Confirm",
                 "confirm_message": f"Are you sure you want to process {len(self.selected_files) if hasattr(self, 'selected_files') else 0} files?",
                 "warning": "Warning",

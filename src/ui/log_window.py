@@ -40,7 +40,7 @@ class LogWindow:
     def create_window(self):
         """创建日志窗口"""
         self.window = tk.Toplevel(self.parent)
-        self.window.title("处理日志")
+        self.window.title("Logs")
         self.window.geometry("600x400")
         self.window.protocol("WM_DELETE_WINDOW", self.hide_window)
         
@@ -56,7 +56,7 @@ class LogWindow:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         # 添加关闭按钮
-        close_btn = ttk.Button(self.window, text="关闭", command=self.hide_window)
+        close_btn = ttk.Button(self.window, text="Close", command=self.hide_window)
         close_btn.pack(pady=(0, 10))
     
     def log(self, message):

@@ -65,20 +65,40 @@ class DragDropMixin:
     
     def on_drag_enter(self, event):
         """处理拖拽进入事件（提供视觉反馈）"""
-        # 改变拖拽区域的背景色以提供视觉反馈
-        widget = event.widget
-        self.original_bg = widget.cget("background")
-        widget.configure(background="#e3f2fd")
-        print("拖拽进入")
+        try:
+            # 改变拖拽区域的背景色以提供视觉反馈
+            widget = event.widget
+            # 检查widget是否有background属性
+            if hasattr(widget, 'cget') and hasattr(widget, 'configure'):
+                try:
+                    self.original_bg = widget.cget("background")
+                    widget.configure(background="#e3f2fd")
+                    print("拖拽进入")
+                except _tkinter.TclError:
+                    # 如果无法获取或设置background属性，忽略错误
+                    print("无法设置拖拽区域背景色")
+            else:
+                print("Widget不支持背景色设置")
+        except Exception as e:
+            print(f"处理拖拽进入事件时出错: {e}")
     
     def on_drag_leave(self, event):
         """处理拖拽离开事件"""
-        # 恢复拖拽区域的原始背景色
-        widget = event.widget
-        if hasattr(self, 'original_bg') and self.original_bg:
-            widget.configure(background=self.original_bg)
-            self.original_bg = None
-        print("拖拽离开")
+        try:
+            # 恢复拖拽区域的原始背景色
+            widget = event.widget
+            if hasattr(self, 'original_bg') and self.original_bg and hasattr(widget, 'configure'):
+                try:
+                    widget.configure(background=self.original_bg)
+                    self.original_bg = None
+                    print("拖拽离开")
+                except _tkinter.TclError:
+                    # 如果无法设置background属性，忽略错误
+                    print("无法恢复拖拽区域背景色")
+            else:
+                print("无需恢复背景色")
+        except Exception as e:
+            print(f"处理拖拽离开事件时出错: {e}")
     
     def _on_drop(self, event):
         """处理文件拖拽释放事件"""
