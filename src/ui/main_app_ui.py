@@ -1,8 +1,9 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import os
 import gettext
 import locale
+import re
 
 from .base_ui import BaseUI
 from .log_window import LogWindow
@@ -68,9 +69,24 @@ class MainAppUI(BaseUI, DragDropMixin):
                 "settings": "设置",
                 "language_settings": "语言设置",
                 "select_language": "选择界面语言:",
-                "main_processing": "主处理",
+                "main_processing": "快速生成损坏RVMAT",
                 "logs": "日志",
-                "clear_logs": "清空日志"
+                "clear_logs": "清空日志",
+                "quick_rvmat": "一键生成RVMAT",
+                "input_parameters": "输入参数",
+                "folder_path": "文件夹路径:",
+                "browse": "浏览",
+                "rvmat_filename": "RVMAT文件名:",
+                "template_content": "模板RVMAT内容:",
+                "start_process": "开始处理",
+                "warning_enter_folder_path": "请输入文件夹路径",
+                "warning_template_empty": "模板内容不能为空",
+                "success_generate_rvmat": "成功生成RVMAT文件: {}",
+                "error_generate_rvmat": "生成RVMAT文件失败: {}",
+                "success_quick_process": "成功对 {} 进行快速损坏处理",
+                "success_rvmat_generated": "RVMAT文件已生成并完成快速损坏处理:\n{}",
+                "error_quick_process": "对 {} 进行快速损坏处理失败",
+                "error_processing_file": "处理 {} 时发生错误: {}"
             },
             "en": {
                 "title": "Rvmat-Creator - DayZ Material File Processor",
@@ -94,9 +110,24 @@ class MainAppUI(BaseUI, DragDropMixin):
                 "settings": "Settings",
                 "language_settings": "Language Settings",
                 "select_language": "Select Interface Language:",
-                "main_processing": "Main Processing",
+                "main_processing": "Quick Generate Damaged RVMAT",
                 "logs": "Logs",
-                "clear_logs": "Clear Logs"
+                "clear_logs": "Clear Logs",
+                "quick_rvmat": "One-Click Generate RVMAT",
+                "input_parameters": "Input Parameters",
+                "folder_path": "Folder Path:",
+                "browse": "Browse",
+                "rvmat_filename": "RVMAT Filename:",
+                "template_content": "Template RVMAT Content:",
+                "start_process": "Start Process",
+                "warning_enter_folder_path": "Please enter folder path",
+                "warning_template_empty": "Template content cannot be empty",
+                "success_generate_rvmat": "Successfully generated RVMAT file: {}",
+                "error_generate_rvmat": "Failed to generate RVMAT file: {}",
+                "success_quick_process": "Successfully processed quick damage for {}",
+                "success_rvmat_generated": "RVMAT file generated and quick damage processing completed:\n{}",
+                "error_quick_process": "Failed to process quick damage for {}",
+                "error_processing_file": "Error processing {}: {}"
             }
         }
     
@@ -167,6 +198,10 @@ class MainAppUI(BaseUI, DragDropMixin):
         self.main_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.main_frame, text=self._("main_processing"))
         
+        # 创建一键生成RVMAT框架
+        self.quick_rvmat_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.quick_rvmat_frame, text="一键生成RVMAT")
+        
         # 创建设置框架
         self.settings_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.settings_frame, text=self._("settings"))
@@ -183,6 +218,9 @@ class MainAppUI(BaseUI, DragDropMixin):
         
         # 创建主处理区域
         self.create_main_processing_area()
+        
+        # 创建一键生成RVMAT区域
+        self.create_quick_rvmat_area()
         
         # 创建设置区域
         self.create_settings_area()
@@ -389,6 +427,387 @@ class MainAppUI(BaseUI, DragDropMixin):
             self.log_text_widget.delete(1.0, tk.END)
         # 同时清空LogWindow中的日志
         self.log_window.clear_log()
+        
+    def create_quick_rvmat_area(self):
+        """创建一键生成RVMAT区域"""
+        # 创建主框架
+        main_frame = ttk.Frame(self.quick_rvmat_frame)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # 创建输入区域
+        input_frame = ttk.LabelFrame(main_frame, text=self._("input_parameters"), padding="10")
+        input_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        # 文件夹路径输入
+        path_label = ttk.Label(input_frame, text=self._("folder_path"))
+        path_label.grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+        
+        # 确保在打包环境中变量正确初始化
+        if not hasattr(self, 'path_var') or self.path_var is None:
+            self.path_var = tk.StringVar()
+        self.path_entry = ttk.Entry(input_frame, textvariable=self.path_var, width=50)
+        self.path_entry.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        
+        # 浏览按钮
+        browse_btn = ttk.Button(input_frame, text=self._("browse"), command=self.browse_folder)
+        browse_btn.grid(row=1, column=1, padx=(10, 0), pady=(0, 10))
+        
+        # RVMAT文件名输入
+        filename_label = ttk.Label(input_frame, text=self._("rvmat_filename"))
+        filename_label.grid(row=2, column=0, sticky=tk.W, pady=(0, 5))
+        
+        # 确保在打包环境中变量正确初始化
+        if not hasattr(self, 'filename_var') or self.filename_var is None:
+            self.filename_var = tk.StringVar()
+        self.filename_entry = ttk.Entry(input_frame, textvariable=self.filename_var, width=50)
+        self.filename_entry.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        
+        # 在打包环境中强制刷新界面
+        try:
+            input_frame.update_idletasks()
+        except Exception as e:
+            print(f"界面初始化刷新时出错: {e}")
+        
+        # 配置网格权重
+        input_frame.columnconfigure(0, weight=1)
+        
+        # 模板RVMAT文本框
+        template_label = ttk.Label(input_frame, text=self._("template_content"))
+        template_label.grid(row=4, column=0, sticky=tk.W, pady=(0, 5))
+        
+        # 创建文本框和滚动条
+        text_frame = ttk.Frame(input_frame)
+        text_frame.grid(row=5, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
+        
+        self.template_text = tk.Text(text_frame, wrap=tk.WORD, height=15)
+        scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=self.template_text.yview)
+        self.template_text.configure(yscrollcommand=scrollbar.set)
+        
+        self.template_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 配置网格权重
+        input_frame.rowconfigure(5, weight=1)
+        input_frame.columnconfigure(0, weight=1)
+        
+        # 加载默认模板
+        self.load_default_template()
+        
+        # 开始处理按钮
+        process_btn = ttk.Button(main_frame, text=self._("start_process"), command=self.process_quick_rvmat, style="Process.TButton")
+        process_btn.pack(pady=10)
+    
+    def browse_folder(self):
+        """浏览文件夹"""
+        # 在主线程中打开文件对话框
+        folder_path = None
+        
+        def open_dialog():
+            nonlocal folder_path
+            folder_path = filedialog.askdirectory()
+        
+        # 确保对话框在主线程中打开
+        if hasattr(self, 'root'):
+            self.root.after(1, open_dialog)
+            # 等待对话框关闭
+            self.root.update()
+        else:
+            folder_path = filedialog.askdirectory()
+        
+        if folder_path:
+            # 使用多种方法确保路径显示
+            def update_path_entry():
+                try:
+                    # 方法1: 直接设置Entry的值
+                    if hasattr(self, 'path_entry'):
+                        self.path_entry.delete(0, tk.END)
+                        self.path_entry.insert(0, folder_path)
+                    
+                    # 方法2: 设置StringVar
+                    if hasattr(self, 'path_var'):
+                        self.path_var.set(folder_path)
+                    
+                    # 方法3: 多重刷新机制
+                    if hasattr(self, 'path_entry'):
+                        # 强制更新显示
+                        self.path_entry.update_idletasks()
+                        self.path_entry.update()
+                        
+                        # 焦点切换强制刷新
+                        current_focus = self.path_entry.focus_get()
+                        self.path_entry.focus_set()
+                        if current_focus:
+                            current_focus.focus_set()
+                        
+                        # 重新验证组件
+                        self.path_entry.configure(validate='none')
+                        self.path_entry.configure(validate='key')
+                        
+                    # 方法4: 刷新整个窗口
+                    if hasattr(self, 'root'):
+                        self.root.update_idletasks()
+                        self.root.update()
+                        
+                except Exception as e:
+                    print(f"界面刷新时出错: {e}")
+                    # 备用方案：直接插入文本
+                    try:
+                        if hasattr(self, 'path_entry'):
+                            self.path_entry.delete(0, tk.END)
+                            self.path_entry.insert(0, folder_path)
+                    except Exception as e2:
+                        print(f"备用方案也失败: {e2}")
+            
+            # 在主线程中执行更新
+            if hasattr(self, 'root'):
+                self.root.after(10, update_path_entry)
+                self.root.update()
+            else:
+                update_path_entry()
+            
+    def load_default_template(self):
+        """加载默认模板"""
+        try:
+            # 获取项目根目录
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            template_path = os.path.join(project_root, "default.rvmat")
+            
+            # 读取模板文件
+            if os.path.exists(template_path):
+                with open(template_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    self.template_text.delete(1.0, tk.END)
+                    self.template_text.insert(1.0, content)
+            else:
+                # 如果文件不存在，插入默认内容
+                default_content = """ambient[]={1,1,1,1};
+diffuse[]={1,1,1,1};
+forcedDiffuse[]={0,0,0,0};
+emmisive[]={0,0,0,1};
+specular[]={1.5,1.5,1.7,1};
+specularPower=300;
+PixelShaderID=\"Super\";
+VertexShaderID=\"Super\";
+class Stage1
+{
+	texture=\"path\\to\\your\\texture_nohq.paa\";
+	uvSource=\"tex\";
+	class uvTransform
+	{
+		aside[]={1,0,0};
+		up[]={0,1,0};
+		dir[]={0,0,0};
+		pos[]={0,0,0};
+	};
+};
+class Stage2
+{
+	texture=\"#(argb,8,8,3)color(0.5,0.5,0.5,1,DT)\";
+	uvSource=\"tex\";
+	class uvTransform
+	{
+		aside[]={8,2,0};
+		up[]={-2,8,0};
+		dir[]={0,0,0};
+		pos[]={0,0,0};
+	};
+};
+class Stage3
+{
+	texture=\"#(argb,8,8,3)color(0,0,0,0,MC)\";
+	uvSource=\"tex\";
+	class uvTransform
+	{
+		aside[]={1,0,0};
+		up[]={0,1,0};
+		dir[]={0,0,0};
+		pos[]={0,0,0};
+	};
+};
+class Stage4
+{
+	texture=\"path\\to\\your\\texture_as.paa\";
+	uvSource=\"tex\";
+	class uvTransform
+	{
+		aside[]={1,0,0};
+		up[]={0,1,0};
+		dir[]={0,0,0};
+		pos[]={0,0,0};
+	};
+};
+class Stage5
+{
+	texture=\"path\\to\\your\\texture_smdi.paa\";
+	uvSource=\"tex\";
+	class uvTransform
+	{
+		aside[]={1,0,0};
+		up[]={0,1,0};
+		dir[]={0,0,0};
+		pos[]={0,0,0};
+	};
+};
+class Stage6
+{
+	texture=\"#(ai,64,64,1)fresnel(2.34,0.12)\";
+	uvSource="none";
+};
+class Stage7
+{
+	texture=\"dz\data\data\env_land_co.paa\";
+	uvSource=\"tex\";
+	class uvTransform
+	{
+		aside[]={1,0,0};
+		up[]={0,1,0};
+		dir[]={0,0,0};
+		pos[]={0,0,0};
+	};
+};"""
+                self.template_text.delete(1.0, tk.END)
+                self.template_text.insert(1.0, default_content)
+        except Exception as e:
+            self.log_window.log(f"加载默认模板失败: {str(e)}")
+            
+    def process_quick_rvmat(self):
+        """处理一键生成RVMAT"""
+        # 获取输入参数
+        # 在打包环境中确保能正确获取值
+        folder_path = self.path_var.get().strip() if hasattr(self, 'path_var') and self.path_var else ""
+        template_content = self.template_text.get(1.0, tk.END).strip() if hasattr(self, 'template_text') and self.template_text else ""
+        filename = self.filename_var.get().strip() if hasattr(self, 'filename_var') and self.filename_var else ""
+        
+        # 如果通过path_entry直接获取
+        if not folder_path and hasattr(self, 'path_entry'):
+            folder_path = self.path_entry.get().strip()
+        
+        # 如果通过filename_entry直接获取
+        if not filename and hasattr(self, 'filename_entry'):
+            filename = self.filename_entry.get().strip()
+        
+        # 验证输入
+        if not folder_path:
+            messagebox.showwarning(self._("warning"), self._("warning_enter_folder_path"))
+            return
+            
+        if not template_content:
+            messagebox.showwarning(self._("warning"), self._("warning_template_empty"))
+            return
+            
+        # 如果没有输入文件名，则使用文件夹名称作为基础名称
+        if not filename:
+            filename = os.path.basename(os.path.normpath(folder_path))
+            # 确保文件名以.rvmat结尾
+            if not filename.endswith(".rvmat"):
+                filename += ".rvmat"
+            
+        # 确保文件名以.rvmat结尾
+        if not filename.endswith(".rvmat"):
+            filename += ".rvmat"
+        
+        try:
+            # 处理模板内容，替换texture路径
+            processed_content = self.process_template_content(template_content, folder_path, filename)
+            
+            # 生成输出文件路径 (在用户选择的文件夹中)
+            output_path = os.path.join(folder_path, filename)
+            
+            # 写入文件
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(processed_content)
+            
+            # 记录日志
+            success_msg = self._("success_generate_rvmat").format(output_path)
+            self.log_window.log(success_msg)
+            if self.log_text_widget:
+                self.log_text_widget.insert(tk.END, success_msg + "\n")
+                self.log_text_widget.see(tk.END)
+                
+            # 对生成的文件进行快速损坏处理
+            self.process_single_rvmat_file(output_path)
+            
+        except Exception as e:
+            error_msg = self._("error_generate_rvmat").format(str(e))
+            self.log_window.log(error_msg)
+            if self.log_text_widget:
+                self.log_text_widget.insert(tk.END, error_msg + "\n")
+                self.log_text_widget.see(tk.END)
+            messagebox.showerror(self._("error"), error_msg)
+            
+    def process_single_rvmat_file(self, file_path):
+        """处理单个RVMAT文件，生成损坏版本"""
+        try:
+            # 使用现有的处理器处理单个文件
+            success = self.processor.process_rvmat_file(file_path)
+            
+            if success:
+                success_msg = self._("success_quick_process").format(file_path)
+                self.log_window.log(success_msg)
+                if self.log_text_widget:
+                    self.log_text_widget.insert(tk.END, success_msg + "\n")
+                    self.log_text_widget.see(tk.END)
+                messagebox.showinfo(self._("success"), self._("success_rvmat_generated").format(file_path))
+            else:
+                error_msg = self._("error_quick_process").format(file_path)
+                self.log_window.log(error_msg)
+                if self.log_text_widget:
+                    self.log_text_widget.insert(tk.END, error_msg + "\n")
+                    self.log_text_widget.see(tk.END)
+                messagebox.showerror(self._("error"), error_msg)
+                
+        except Exception as e:
+            error_msg = self._("error_processing_file").format(file_path, str(e))
+            self.log_window.log(error_msg)
+            if self.log_text_widget:
+                self.log_text_widget.insert(tk.END, error_msg + "\n")
+                self.log_text_widget.see(tk.END)
+            messagebox.showerror(self._("error"), error_msg)
+            
+    def process_template_content(self, content, folder_path, filename):
+        """处理模板内容，替换texture路径"""
+        # 移除盘符路径，只保留相对路径
+        # 例如: D:\Python Project\Rvmat-Creator -> Python Project\Rvmat-Creator
+        relative_path = folder_path
+        if ":" in folder_path:
+            # 移除盘符和第一个反斜杠
+            relative_path = folder_path.split(":", 1)[1].lstrip("")
+        
+        # 将反斜杠替换为正斜杠，符合RVMAT文件格式要求
+        relative_path = relative_path.replace("\\", "/")
+        
+        # 获取不带扩展名的文件名
+        basename = os.path.splitext(filename)[0]
+        
+        # 构造完整的texture路径 (相对路径 + 文件名 + 后缀)
+        nohq_path = f"{relative_path}/{basename}_nohq.paa"
+        as_path = f"{relative_path}/{basename}_as.paa"
+        smdi_path = f"{relative_path}/{basename}_smdi.paa"
+        
+        # 确保路径开头没有斜杠
+        if nohq_path.startswith("/"):
+            nohq_path = nohq_path[1:]
+        if as_path.startswith("/"):
+            as_path = as_path[1:]
+        if smdi_path.startswith("/"):
+            smdi_path = smdi_path[1:]
+        
+        # 替换Stage1的texture路径
+        pattern1 = r'(class\s+Stage1\s*\{[^}]*texture\s*=\s*"[^"]*"(;))'
+        replacement1 = 'class Stage1\n{\n\ttexture="' + nohq_path + '";'
+        content = re.sub(pattern1, replacement1, content, flags=re.DOTALL)
+        
+        # 替换Stage4的texture路径
+        pattern4 = r'(class\s+Stage4\s*\{[^}]*texture\s*=\s*"[^"]*"(;))'
+        replacement4 = 'class Stage4\n{\n\ttexture="' + as_path + '";'
+        content = re.sub(pattern4, replacement4, content, flags=re.DOTALL)
+        
+        # 替换Stage5的texture路径
+        pattern5 = r'(class\s+Stage5\s*\{[^}]*texture\s*=\s*"[^"]*"(;))'
+        replacement5 = 'class Stage5\n{\n\ttexture="' + smdi_path + '";'
+        content = re.sub(pattern5, replacement5, content, flags=re.DOTALL)
+        
+        return content
     
     def change_language(self, event=None):
         """切换语言"""
@@ -432,8 +851,9 @@ class MainAppUI(BaseUI, DragDropMixin):
         # 更新选项卡文本
         if hasattr(self, 'notebook'):
             self.notebook.tab(0, text=self._("main_processing"))
-            self.notebook.tab(1, text=self._("settings"))
-            self.notebook.tab(2, text=self._("logs"))
+            self.notebook.tab(1, text=self._("quick_rvmat"))
+            self.notebook.tab(2, text=self._("settings"))
+            self.notebook.tab(3, text=self._("logs"))
         
         # 更新批量处理区域标题
         if hasattr(self, 'batch_frame'):
@@ -490,6 +910,31 @@ class MainAppUI(BaseUI, DragDropMixin):
                     for grandchild in child.winfo_children():
                         if isinstance(grandchild, ttk.Button):
                             grandchild.configure(text=self._("clear_logs"))
+        
+        # 更新一键生成RVMAT区域文本
+        if hasattr(self, 'quick_rvmat_frame'):
+            # 更新输入参数框架标题
+            for child in self.quick_rvmat_frame.winfo_children():
+                if isinstance(child, ttk.Frame):
+                    for grandchild in child.winfo_children():
+                        if isinstance(grandchild, ttk.LabelFrame):
+                            grandchild.configure(text=self._("input_parameters"))
+                            # 更新标签文本
+                            for great_grandchild in grandchild.winfo_children():
+                                if isinstance(great_grandchild, ttk.Label):
+                                    text = great_grandchild.cget("text")
+                                    if "文件夹路径" in text or "Folder Path" in text or self._("folder_path") in text:
+                                        great_grandchild.configure(text=self._("folder_path"))
+                                    elif "RVMAT文件名" in text or "RVMAT Filename" in text or self._("rvmat_filename") in text:
+                                        great_grandchild.configure(text=self._("rvmat_filename"))
+                                    elif "模板RVMAT内容" in text or "Template RVMAT Content" in text or self._("template_content") in text:
+                                        great_grandchild.configure(text=self._("template_content"))
+                                elif isinstance(great_grandchild, ttk.Button):
+                                    if "浏览" in great_grandchild.cget("text") or "Browse" in great_grandchild.cget("text") or self._("browse") in great_grandchild.cget("text"):
+                                        great_grandchild.configure(text=self._("browse"))
+                        elif isinstance(grandchild, ttk.Button):
+                            if "开始处理" in grandchild.cget("text") or "Start Process" in grandchild.cget("text") or self._("start_process") in grandchild.cget("text"):
+                                grandchild.configure(text=self._("start_process"))
         
         # 强制刷新界面
         try:
