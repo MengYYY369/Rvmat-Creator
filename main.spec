@@ -2,15 +2,16 @@
 
 block_cipher = None
 
-
 a = Analysis(['src\\main.py'],
              pathex=['D:\\Python Project\\Rvmat-Creator'],
              binaries=[('C:\\Users\\fengzhi\\AppData\\Roaming\\Python\\Python313\\site-packages\\tkinterdnd2\\tkdnd\\win-x64\\libtkdnd2.9.4.dll', 'tkinterdnd2/tkdnd/win-x64')],
              datas=[('C:\\Users\\fengzhi\\AppData\\Roaming\\Python\\Python313\\site-packages\\tkinterdnd2\\tkdnd\\win-x64', 'tkinterdnd2/tkdnd/win-x64'),
-                    ('C:\\Users\\fengzhi\\AppData\\Roaming\\Python\\Python313\\site-packages\\tkinterdnd2', 'tkinterdnd2')],
+                    ('C:\\Users\\fengzhi\\AppData\\Roaming\\Python\\Python313\\site-packages\\tkinterdnd2', 'tkinterdnd2'),
+                    ('src\\ui\\*.py', 'src/ui'),
+                    ('src\\modules\\*.py', 'src/modules')],
              hiddenimports=['tkinterdnd2', 'tkinterdnd2.TkinterDnD'],
              hookspath=['.'],
-             runtime_hooks=[],
+             runtime_hooks=['hook-encoding.py'],
              excludes=[],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
@@ -31,4 +32,5 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False )
+          console=True,
+          uac_admin=True)

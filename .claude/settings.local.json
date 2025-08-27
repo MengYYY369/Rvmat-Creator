@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pyinstaller:*)",
+      "Bash(python:*)",
+      "Bash(\"Rvmat-Creator.exe\")",
+      "Bash(./Rvmat-Creator.exe:*)",
+      "WebSearch",
+      "Bash(start:*)",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\Users\\fengzhi\\.rvmat_creator"
+    ]
+  }
+}

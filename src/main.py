@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Rvmat-Creator 主程序
 用于快速处理 DayZ 材质 Rvmat 文件
 """
+import sys
+import os
+
+# 设置默认编码为UTF-8
+if hasattr(sys, 'setdefaultencoding'):
+    sys.setdefaultencoding('utf-8')
 
 import os
 import sys
