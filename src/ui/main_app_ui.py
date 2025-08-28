@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import os
+import sys
 import gettext
 import locale
 import re
@@ -200,7 +201,7 @@ class MainAppUI(BaseUI, DragDropMixin):
         
         # 创建一键生成RVMAT框架
         self.quick_rvmat_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.quick_rvmat_frame, text="一键生成RVMAT")
+        self.notebook.add(self.quick_rvmat_frame, text=self._("quick_rvmat"))
         
         # 创建设置框架
         self.settings_frame = ttk.Frame(self.notebook)
@@ -499,78 +500,48 @@ class MainAppUI(BaseUI, DragDropMixin):
     
     def browse_folder(self):
         """浏览文件夹"""
-        # 在主线程中打开文件对话框
-        folder_path = None
-        
-        def open_dialog():
-            nonlocal folder_path
-            folder_path = filedialog.askdirectory()
-        
-        # 确保对话框在主线程中打开
-        if hasattr(self, 'root'):
-            self.root.after(1, open_dialog)
-            # 等待对话框关闭
-            self.root.update()
-        else:
-            folder_path = filedialog.askdirectory()
+        # 直接在主线程中打开文件对话框
+        folder_path = filedialog.askdirectory()
         
         if folder_path:
-            # 使用多种方法确保路径显示
-            def update_path_entry():
-                try:
-                    # 方法1: 直接设置Entry的值
-                    if hasattr(self, 'path_entry'):
-                        self.path_entry.delete(0, tk.END)
-                        self.path_entry.insert(0, folder_path)
-                    
-                    # 方法2: 设置StringVar
-                    if hasattr(self, 'path_var'):
-                        self.path_var.set(folder_path)
-                    
-                    # 方法3: 多重刷新机制
-                    if hasattr(self, 'path_entry'):
-                        # 强制更新显示
-                        self.path_entry.update_idletasks()
-                        self.path_entry.update()
-                        
-                        # 焦点切换强制刷新
-                        current_focus = self.path_entry.focus_get()
-                        self.path_entry.focus_set()
-                        if current_focus:
-                            current_focus.focus_set()
-                        
-                        # 重新验证组件
-                        self.path_entry.configure(validate='none')
-                        self.path_entry.configure(validate='key')
-                        
-                    # 方法4: 刷新整个窗口
-                    if hasattr(self, 'root'):
-                        self.root.update_idletasks()
-                        self.root.update()
-                        
-                except Exception as e:
-                    print(f"界面刷新时出错: {e}")
-                    # 备用方案：直接插入文本
-                    try:
-                        if hasattr(self, 'path_entry'):
-                            self.path_entry.delete(0, tk.END)
-                            self.path_entry.insert(0, folder_path)
-                    except Exception as e2:
-                        print(f"备用方案也失败: {e2}")
+            # 确保path_var已初始化
+            if not hasattr(self, 'path_var') or self.path_var is None:
+                self.path_var = tk.StringVar()
             
-            # 在主线程中执行更新
-            if hasattr(self, 'root'):
-                self.root.after(10, update_path_entry)
-                self.root.update()
-            else:
-                update_path_entry()
+            # 设置路径变量
+            self.path_var.set(folder_path)
+            
+            # 更新Entry控件显示
+            if hasattr(self, 'path_entry'):
+                self.path_entry.delete(0, tk.END)
+                self.path_entry.insert(0, folder_path)
+            
+            # 强制刷新界面
+            try:
+                self.path_entry.update_idletasks()
+                # 只需要更新Entry控件，不需要更新整个窗口
+                self.path_entry.update()
+            except Exception as e:
+                print(f"界面刷新时出错: {e}")
             
     def load_default_template(self):
         """加载默认模板"""
         try:
-            # 获取项目根目录
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            template_path = os.path.join(project_root, "default.rvmat")
+            # 优先查找软件同级目录下的@default.rvmat或default.rvmat文件
+            # 在开发环境中，这通常是项目根目录
+            # 在打包环境中，这是exe文件所在目录
+            if getattr(sys, 'frozen', False):
+                # 打包环境
+                app_dir = os.path.dirname(sys.executable)
+            else:
+                # 开发环境
+                app_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            
+            # 优先查找@default.rvmat文件
+            template_path = os.path.join(app_dir, "@default.rvmat")
+            if not os.path.exists(template_path):
+                # 如果@default.rvmat不存在，则查找default.rvmat
+                template_path = os.path.join(app_dir, "default.rvmat")
             
             # 读取模板文件
             if os.path.exists(template_path):
