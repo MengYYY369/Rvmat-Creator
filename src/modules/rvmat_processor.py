@@ -77,8 +77,10 @@ class RvmatProcessor:
             
             # 如果在 Stage3 块中，查找并替换 texture 参数
             if in_stage3 and 'texture=' in line:
+                # 确保路径使用反斜杠而不是正斜杠
+                normalized_texture_path = new_texture_path.replace('/', '\\')
                 # 替换 texture 路径
-                modified_line = line.split('texture=')[0] + f'texture="{new_texture_path}";'
+                modified_line = line.split('texture=')[0] + f'texture="{normalized_texture_path}";'
                 modified_lines.append(modified_line)
             else:
                 modified_lines.append(line)
