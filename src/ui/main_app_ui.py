@@ -688,6 +688,9 @@ class Stage7
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(processed_content)
             
+            # 将文件中的所有正斜杠替换为反斜杠
+            self.replace_slashes_in_file(output_path)
+            
             # 记录日志
             success_msg = self._("success_generate_rvmat").format(output_path)
             self.log_window.log(success_msg)
@@ -779,6 +782,34 @@ class Stage7
         content = re.sub(pattern5, replacement5, content, flags=re.DOTALL)
         
         return content
+    
+    def replace_slashes_in_file(self, file_path):
+        """将文件中的所有正斜杠替换为反斜杠"""
+        try:
+            # 读取文件内容
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            # 将所有正斜杠替换为反斜杠
+            modified_content = content.replace("/", "\\")
+            
+            # 写回文件
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(modified_content)
+                
+            # 记录日志
+            log_msg = f"已将文件 {file_path} 中的所有 '/' 替换为 '\\'" if self.language == "zh" else f"Replaced all '/' with '\\' in file {file_path}"
+            self.log_window.log(log_msg)
+            if self.log_text_widget:
+                self.log_text_widget.insert(tk.END, log_msg + "\n")
+                self.log_text_widget.see(tk.END)
+                
+        except Exception as e:
+            error_msg = f"替换斜杠时出错: {str(e)}" if self.language == "zh" else f"Error replacing slashes: {str(e)}"
+            self.log_window.log(error_msg)
+            if self.log_text_widget:
+                self.log_text_widget.insert(tk.END, error_msg + "\n")
+                self.log_text_widget.see(tk.END)
     
     def change_language(self, event=None):
         """切换语言"""
